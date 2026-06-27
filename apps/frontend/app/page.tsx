@@ -1,646 +1,329 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { useTheme } from "next-themes";
-import { 
-  motion, 
-  useMotionValue, 
-  useSpring, 
-  useTransform, 
-  MotionValue 
-} from "framer-motion";
-import { 
-  Home as HomeIcon,
-  Pencil, 
-  Moon, 
-  Sun, 
-  Shapes,
-  Hexagon,
-  Triangle,
+import { motion, AnimatePresence } from "framer-motion";
+import {
   MoveUpRight,
-  Minus,
-  X,
-  CircleDashed,
+  Shapes,
   Terminal,
+  Pencil,
   MousePointer2,
-  Circle,
-  Square
+  Users,
+  Zap,
+  Database,
+  Menu,
+  X,
+  Github,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
-// --- 1. Custom Logo with Shapes ---
-const DrawSyncLogo = () => {
+const Logo = ({ size = 28, dark = false }: { size?: number; dark?: boolean }) => (
+  <motion.svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+    <motion.circle cx="12" cy="16" r="9" stroke="var(--coral)" strokeWidth="1.8" fill="var(--coral)" fillOpacity="0.15"
+      animate={{ cx: [12, 11.2, 12] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} />
+    <motion.circle cx="20" cy="16" r="9" stroke={dark ? "var(--on-dark)" : "var(--ink)"} strokeWidth="1.8" fill={dark ? "var(--on-dark)" : "var(--ink)"} fillOpacity="0.07"
+      animate={{ cx: [20, 20.8, 20] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} />
+    <motion.ellipse cx="16" cy="16" rx="3.5" ry="6" fill="var(--coral)" fillOpacity="0.55"
+      animate={{ fillOpacity: [0.45, 0.75, 0.45] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} />
+  </motion.svg>
+);
+
+const Navbar = () => {
+  const [open, setOpen] = useState(false);
   return (
-    <div className="flex items-center justify-center gap-1 text-5xl md:text-8xl font-bold tracking-tighter text-foreground">
-      <span>Dr</span>
-      {/* Replace 'a' with Triangle */}
-      <motion.div 
-        className="relative flex items-center justify-center w-[0.8em] h-[0.8em]"
-        whileHover={{ rotate: 180, scale: 1.1 }}
-        transition={{ type: "spring", stiffness: 200 }}
-      >
-        <Triangle className="w-full h-full fill-blue-600 stroke-none" />
-      </motion.div>
-      <span>wS</span>
-      <span>yn</span>
-      {/* Replace 'c' with Semicircle (C shape) */}
-      <motion.div 
-        className="relative flex items-center justify-center w-[0.7em] h-[0.7em]"
-        animate={{ rotate: 360 }}
-        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-      >
-        <svg viewBox="0 0 100 100" className="w-full h-full fill-none stroke-blue-600 stroke-[15] stroke-linecap-round">
-          {/* C-Shape Arc */}
-          <path d="M 90 30 A 40 40 0 1 0 90 70" />
-        </svg>
-      </motion.div>
-    </div>
+    <>
+      <nav style={{ background: "var(--canvas)", borderBottom: "1px solid var(--hairline)" }} className="fixed top-0 inset-x-0 z-50 h-16 flex items-center px-6 md:px-12">
+        <div className="max-w-6xl mx-auto w-full flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2">
+            <Logo size={28} />
+            <span style={{ fontFamily: "var(--font-sans)", color: "var(--ink)", fontWeight: 600, fontSize: 16, letterSpacing: "-0.3px" }}>DrawSync</span>
+          </Link>
+          <div className="hidden md:flex items-center gap-8">
+            <a href="#features" style={{ color: "var(--muted-color)", fontSize: 14, fontWeight: 500, fontFamily: "var(--font-sans)" }} className="hover:text-[var(--ink)] transition-colors">Features</a>
+            <a href="#how-it-works" style={{ color: "var(--muted-color)", fontSize: 14, fontWeight: 500, fontFamily: "var(--font-sans)" }} className="hover:text-[var(--ink)] transition-colors">How it works</a>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link href="/auth" style={{ color: "var(--ink)", fontSize: 14, fontWeight: 500, fontFamily: "var(--font-sans)" }} className="hidden md:block hover:text-[var(--muted-color)] transition-colors">Sign in</Link>
+            <Link href="/auth" style={{ background: "var(--coral)", color: "#fff", fontSize: 14, fontWeight: 500, fontFamily: "var(--font-sans)", padding: "10px 20px", borderRadius: 8, lineHeight: 1 }} className="hidden md:inline-block hover:opacity-90 transition-opacity">Try DrawSync</Link>
+            <button onClick={() => setOpen(!open)} className="md:hidden p-2" style={{ color: "var(--ink)" }}>
+              {open ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
+        </div>
+      </nav>
+      <AnimatePresence>
+        {open && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}
+            style={{ background: "var(--canvas)", borderBottom: "1px solid var(--hairline)" }}
+            className="fixed top-16 inset-x-0 z-40 flex flex-col px-6 py-6 gap-5 md:hidden">
+            {["Features", "How it works"].map((item) => (
+              <a key={item} href={`#${item.toLowerCase().replace(/ /g, "-")}`} onClick={() => setOpen(false)} style={{ color: "var(--ink)", fontSize: 16, fontWeight: 500, fontFamily: "var(--font-sans)" }}>{item}</a>
+            ))}
+            <div style={{ borderTop: "1px solid var(--hairline)", paddingTop: 20, display: "flex", flexDirection: "column" as const, gap: 12 }}>
+              <Link href="/auth" onClick={() => setOpen(false)} style={{ color: "var(--ink)", fontSize: 15, fontWeight: 500, fontFamily: "var(--font-sans)" }}>Sign in</Link>
+              <Link href="/auth" onClick={() => setOpen(false)} style={{ background: "var(--coral)", color: "#fff", fontSize: 15, fontWeight: 500, fontFamily: "var(--font-sans)", padding: "12px 20px", borderRadius: 8, textAlign: "center" as const }}>Try DrawSync</Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
-// --- Dock Component ---
-function DockItem({
-  mouseX,
-  icon: Icon,
-  href,
-  onClick,
-  label,
-  active = false,
-}: {
-  mouseX: MotionValue;
-  icon?: React.ElementType;
-  href?: string;
-  onClick?: () => void;
-  label?: string;
-  active?: boolean;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  const distance = useTransform(mouseX, (val) => {
-    const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
-    return val - bounds.x - bounds.width / 2;
-  });
-
-  const isIcon = !!Icon;
-  const baseWidth = isIcon ? 40 : 90;
-  const maxWidth = isIcon ? 80 : 130;
-
-  const widthTransform = useTransform(distance, [-150, 0, 150], [baseWidth, maxWidth, baseWidth]);
-  const heightTransform = useTransform(distance, [-150, 0, 150], [40, 60, 40]);
-  const scaleTransform = useTransform(distance, [-150, 0, 150], [1, 1.2, 1]);
-
-  const width = useSpring(widthTransform, { mass: 0.1, stiffness: 150, damping: 12 });
-  const height = useSpring(heightTransform, { mass: 0.1, stiffness: 150, damping: 12 });
-  const contentScale = useSpring(scaleTransform, { mass: 0.1, stiffness: 150, damping: 12 });
-
-  const content = (
-    <motion.div
-      ref={ref}
-      style={{ width, height }}
-      className={cn(
-        "flex items-center justify-center relative transition-colors duration-200 cursor-pointer border border-slate-200 dark:border-slate-800",
-        isIcon ? "rounded-full aspect-square" : "rounded-full px-2",
-        active 
-          ? "bg-black text-white dark:bg-white dark:text-black" 
-          : "bg-white hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400"
-      )}
-      onClick={onClick}
-    >
-      <motion.div style={{ scale: contentScale }} className="flex items-center justify-center whitespace-nowrap">
-        {Icon ? <Icon className="w-5 h-5" /> : <span className="text-sm font-medium">{label}</span>}
-      </motion.div>
+const Hero = () => (
+  <section style={{ background: "var(--canvas)", paddingTop: 120 }} className="min-h-screen flex flex-col items-center justify-center text-center px-6 pb-20">
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+      <span style={{ background: "var(--coral)", color: "#fff", fontSize: 11, fontWeight: 600, fontFamily: "var(--font-sans)", letterSpacing: "1.5px", padding: "5px 14px", borderRadius: 9999, textTransform: "uppercase" as const }}>
+        Real-time collaborative whiteboard
+      </span>
     </motion.div>
-  );
 
-  if (href) {
-    return <Link href={href} title={label}>{content}</Link>;
-  }
+    <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}
+      style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(48px, 9vw, 88px)", fontWeight: 400, lineHeight: 1.02, letterSpacing: "-2px", color: "var(--ink)", marginTop: 28, maxWidth: 880 }}>
+      Dirty your hands{" "}<br className="hidden sm:block" />
+      <em style={{ color: "var(--coral)", fontStyle: "italic" }}>collaboratively</em>
+    </motion.h1>
 
-  return <button onClick={onClick} title={label} className="focus:outline-none">{content}</button>;
-}
+    <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
+      style={{ fontFamily: "var(--font-sans)", fontSize: 18, color: "var(--muted-color)", lineHeight: 1.6, marginTop: 24, maxWidth: 480 }}>
+      Explain your brilliant ideas in real time. A whiteboard built for teams who think fast and draw faster.
+    </motion.p>
 
-const FloatingDock = () => {
-  const { setTheme, theme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  const mouseX = useMotionValue(Infinity);
-
-  useEffect(() => { setMounted(true); }, []);
-
-  return (
-    <motion.div
-      onMouseMove={(e) => mouseX.set(e.pageX)}
-      onMouseLeave={() => mouseX.set(Infinity)}
-      initial={{ y: -100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.8, ease: "easeOut" }}
-      className="
-fixed 
-top-6 md:top-10 
-left-1/2 -translate-x-1/2 
-z-50 
-flex items-center gap-2 md:gap-3 
-px-3 md:px-4 
-py-2 
-max-w-[95vw] 
-overflow-x-auto 
-rounded-full 
-bg-white/80 dark:bg-black/80 
-backdrop-blur-md 
-border border-slate-200 dark:border-slate-800 
-shadow-xl
-"
-
-    >
-      <DockItem mouseX={mouseX} icon={HomeIcon} href="/" label="Home" />
-      <DockItem 
-        mouseX={mouseX} 
-        icon={!mounted ? Moon : (theme === "dark" ? Sun : Moon)}
-        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        label="Toggle Theme"
-      />
-      <div className="w-px h-6 bg-slate-200 dark:bg-slate-800 self-center mx-1" />
-      <DockItem mouseX={mouseX} href="#features" label="Features" />
-      <DockItem mouseX={mouseX} href="/auth" label="Sign In" />
-      <DockItem mouseX={mouseX} href="/auth" label="Sign Up" active />
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}
+      className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-10 w-full max-w-xs sm:max-w-none sm:w-auto">
+      <Link href="/auth" style={{ background: "var(--coral)", color: "#fff", fontSize: 15, fontWeight: 500, fontFamily: "var(--font-sans)", padding: "14px 32px", borderRadius: 8, lineHeight: 1, textAlign: "center" as const }} className="hover:opacity-90 transition-opacity">
+        Start Drawing →
+      </Link>
+      <a href="#features" style={{ background: "var(--canvas)", color: "var(--ink)", fontSize: 15, fontWeight: 500, fontFamily: "var(--font-sans)", padding: "14px 32px", borderRadius: 8, lineHeight: 1, border: "1px solid var(--hairline)", textAlign: "center" as const }} className="hover:bg-[var(--surface-soft)] transition-colors">
+        See how it works
+      </a>
     </motion.div>
-  );
-};
 
-// --- Background Shapes Component ---
-const BackgroundShapes = () => {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
-      {/* 1. Dashed Circle Top Left */}
-      <motion.svg className="absolute top-[10%] left-[5%] text-slate-400 w-24 h-24" fill="none" viewBox="0 0 100 100" animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }}>
-        <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="2" strokeDasharray="8 8" />
-      </motion.svg>
+    
 
-      {/* 2. Triangle Top Right */}
-      <motion.div className="absolute top-[15%] right-[10%] text-slate-400" animate={{ rotate: -10, y: [0, 10, 0] }} transition={{ duration: 5, repeat: Infinity }}>
-        <Triangle className="w-16 h-16 stroke-[2px] fill-transparent" />
-      </motion.div>
+    <motion.div initial={{ opacity: 0, y: 40, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.8, delay: 0.4 }} className="w-full max-w-5xl mt-12">
+      <div style={{ background: "var(--surface-dark)", borderRadius: 16, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 40px 80px rgba(0,0,0,0.22)" }}>
+        {/* Browser chrome */}
+        <div style={{ background: "var(--surface-dark-elevated)", padding: "10px 16px", display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="flex gap-1.5">
+            <div style={{ width: 11, height: 11, borderRadius: "50%", background: "#ff5f57" }} />
+            <div style={{ width: 11, height: 11, borderRadius: "50%", background: "#febc2e" }} />
+            <div style={{ width: 11, height: 11, borderRadius: "50%", background: "#28c840" }} />
+          </div>
+          <div style={{ flex: 1, maxWidth: 220, margin: "0 auto", background: "var(--surface-dark-soft)", borderRadius: 5, padding: "3px 10px", fontSize: 11, color: "var(--on-dark-soft)", fontFamily: "var(--font-mono)", textAlign: "center" as const }}>
+            drawsync.app/canvas/room-123
+          </div>
+          <div className="flex items-center gap-1.5">
+            <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.5, repeat: Infinity }}
+              style={{ width: 7, height: 7, borderRadius: "50%", background: "#28c840" }} />
+            <span style={{ fontSize: 10, color: "var(--on-dark-soft)", fontFamily: "var(--font-sans)", fontWeight: 500 }}>LIVE</span>
+          </div>
+        </div>
 
-      {/* 3. Square Bottom Left */}
-      <motion.div className="absolute bottom-[20%] left-[10%] text-slate-400" animate={{ rotate: 15, y: [0, -10, 0] }} transition={{ duration: 6, repeat: Infinity }}>
-        <Square className="w-20 h-20 stroke-[2px] fill-transparent" />
-      </motion.div>
+        {/* Canvas */}
+        <div style={{ position: "relative" as const, height: 420, background: "#0f0e0c", backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px)", backgroundSize: "24px 24px" }}>
+          <div style={{ position: "absolute" as const, inset: 0, background: "radial-gradient(ellipse at 25% 35%, rgba(204,120,92,0.08) 0%, transparent 55%), radial-gradient(ellipse at 75% 70%, rgba(93,184,166,0.06) 0%, transparent 50%)", pointerEvents: "none" }} />
 
-      {/* 4. Hexagon Bottom Right */}
-      <motion.div className="absolute bottom-[25%] right-[15%] text-slate-400" animate={{ rotate: -360 }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }}>
-        <Hexagon className="w-24 h-24 stroke-[2px] stroke-dashed fill-transparent" />
-      </motion.div>
+          {/* Toolbar */}
+          <div style={{ position: "absolute" as const, top: 20, left: "50%", transform: "translateX(-50%)", background: "rgba(37,35,32,0.96)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "8px 12px", display: "flex", gap: 8, zIndex: 10 }}>
+            {[Pencil, Shapes, Terminal, MoveUpRight].map((Icon, i) => (
+              <div key={i} style={{ width: 34, height: 34, borderRadius: 7, background: i === 0 ? "var(--coral)" : "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon size={15} color={i === 0 ? "#fff" : "rgba(255,255,255,0.35)"} />
+              </div>
+            ))}
+          </div>
 
-      {/* 5. Plus Signs Scattered */}
-      <div className="absolute top-[40%] left-[20%] text-slate-300"><Minus className="w-8 h-8 rotate-90" /><Minus className="w-8 h-8 -mt-8" /></div>
-      <div className="absolute top-[60%] right-[30%] text-slate-300"><Minus className="w-6 h-6 rotate-90" /><Minus className="w-6 h-6 -mt-6" /></div>
-      <div className="absolute bottom-[10%] left-[40%] text-slate-300"><Minus className="w-10 h-10 rotate-90" /><Minus className="w-10 h-10 -mt-10" /></div>
+          {/* Avatars */}
+          <div style={{ position: "absolute" as const, top: 20, right: 20, display: "flex", zIndex: 10 }}>
+            {[{ color: "#ef4444", label: "A" }, { color: "#3b82f6", label: "B" }, { color: "#10b981", label: "C" }].map((u, i) => (
+              <div key={u.label} style={{ width: 30, height: 30, borderRadius: "50%", background: u.color, border: "2px solid #0f0e0c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", fontFamily: "var(--font-sans)", marginLeft: i === 0 ? 0 : -8 }}>
+                {u.label}
+              </div>
+            ))}
+            <div style={{ marginLeft: -8, width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "2px solid #0f0e0c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: "var(--font-sans)", fontWeight: 600 }}>+2</div>
+          </div>
 
-      {/* 6. Wavy Line Center */}
-      <motion.svg className="absolute top-[30%] left-[40%] text-slate-300 w-48 h-24" fill="none" viewBox="0 0 200 100" animate={{ x: [0, 10, 0] }} transition={{ duration: 4, repeat: Infinity }}>
-         <path d="M10 50 Q 55 10 100 50 T 190 50" stroke="currentColor" strokeWidth="2" />
-      </motion.svg>
+          {/* Cursor Alice */}
+          <motion.div animate={{ x: [60, 220, 150, 60], y: [80, 50, 200, 80] }} transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+            style={{ position: "absolute" as const, top: 0, left: 0, zIndex: 20 }}>
+            <MousePointer2 size={16} fill="#ef4444" color="#ef4444" />
+            <div style={{ background: "#ef4444", color: "#fff", fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 4, marginLeft: 14, marginTop: 2, whiteSpace: "nowrap" as const, fontFamily: "var(--font-sans)" }}>Alice</div>
+          </motion.div>
 
-      {/* 7. X Shapes */}
-      <motion.div className="absolute top-[80%] right-[5%] text-slate-400" animate={{ rotate: 180 }} transition={{ duration: 10, repeat: Infinity }}>
-        <X className="w-12 h-12" />
-      </motion.div>
-       <motion.div className="absolute top-[20%] left-[30%] text-slate-400" animate={{ rotate: -180 }} transition={{ duration: 12, repeat: Infinity }}>
-        <X className="w-8 h-8" />
-      </motion.div>
+          {/* Cursor Bob */}
+          <motion.div animate={{ x: [500, 340, 440, 500], y: [220, 300, 140, 220] }} transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            style={{ position: "absolute" as const, top: 0, left: 0, zIndex: 20 }}>
+            <MousePointer2 size={16} fill="#3b82f6" color="#3b82f6" />
+            <div style={{ background: "#3b82f6", color: "#fff", fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 4, marginLeft: 14, marginTop: 2, whiteSpace: "nowrap" as const, fontFamily: "var(--font-sans)" }}>Bob</div>
+          </motion.div>
 
-      {/* 8. Circles */}
-      <motion.div className="absolute top-[50%] right-[40%] text-slate-300" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 3, repeat: Infinity }}>
-        <Circle className="w-4 h-4 fill-slate-300" />
-      </motion.div>
-      <motion.div className="absolute bottom-[40%] left-[5%] text-slate-300" animate={{ scale: [1, 1.5, 1] }} transition={{ duration: 4, repeat: Infinity }}>
-        <Circle className="w-6 h-6 stroke-2" />
-      </motion.div>
-      
-       {/* 9. Grid Dots */}
-       <div className="absolute top-[10%] right-[40%] grid grid-cols-4 gap-2 opacity-30">
-        {[...Array(16)].map((_, i) => <div key={i} className="w-1 h-1 bg-slate-500 rounded-full" />)}
-      </div>
-    </div>
-  );
-};
+          {/* idea.tsx box */}
+          <motion.div animate={{ rotate: [0, 1.5, -1.5, 0] }} transition={{ duration: 8, repeat: Infinity }}
+            style={{ position: "absolute" as const, top: "20%", left: "10%", width: 180, height: 110, border: "1.5px dashed var(--coral)", borderRadius: 10, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 6 }}>
+            <Pencil size={14} color="var(--coral)" style={{ opacity: 0.7 }} />
+            <span style={{ color: "var(--coral)", fontSize: 11, fontFamily: "var(--font-mono)", fontWeight: 600 }}>idea.tsx</span>
+            <span style={{ color: "rgba(204,120,92,0.5)", fontSize: 9, fontFamily: "var(--font-mono)" }}>editing...</span>
+          </motion.div>
 
-// --- Animations & Dashboard Preview ---
-const AnimatedCursor = ({ color, x, y, name, delay }: { color: string, x: number[], y: number[], name: string, delay: number }) => {
-  return (
-    <motion.div
-      initial={{ x: x[0], y: y[0], opacity: 0 }}
-      animate={{ x: x, y: y, opacity: [0, 1, 1, 0] }}
-      transition={{ 
-        duration: 8, repeat: Infinity, repeatDelay: 2, delay: delay, times: [0, 0.1, 0.9, 1]
-      }}
-      className="absolute top-0 left-0 pointer-events-none z-20"
-    >
-      <MousePointer2 className={`w-5 h-5 fill-current`} style={{ color }} />
-      <div className="ml-5 mt-2 px-2 py-1 rounded text-xs text-white font-medium whitespace-nowrap shadow-sm" style={{ backgroundColor: color }}>
-        {name}
+          {/* WebSocket circle */}
+          <motion.div animate={{ scale: [1, 1.04, 1], opacity: [0.9, 1, 0.9] }} transition={{ duration: 4, repeat: Infinity }}
+            style={{ position: "absolute" as const, bottom: "16%", right: "16%", width: 130, height: 130, borderRadius: "50%", border: "1.5px solid var(--accent-teal)", background: "rgba(93,184,166,0.08)", display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 4 }}>
+            <Zap size={16} color="var(--accent-teal)" />
+            <span style={{ color: "var(--accent-teal)", fontSize: 10, fontFamily: "var(--font-mono)", fontWeight: 600 }}>WebSocket</span>
+            <span style={{ color: "rgba(93,184,166,0.5)", fontSize: 9, fontFamily: "var(--font-mono)" }}>ws://live</span>
+          </motion.div>
+
+          {/* Prisma box */}
+          <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 5, repeat: Infinity }}
+            style={{ position: "absolute" as const, bottom: "24%", left: "44%", width: 115, height: 68, background: "rgba(232,165,90,0.08)", border: "1.5px solid var(--accent-amber)", borderRadius: 8, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 4 }}>
+            <Database size={13} color="var(--accent-amber)" />
+            <span style={{ color: "var(--accent-amber)", fontSize: 10, fontFamily: "var(--font-mono)", fontWeight: 600 }}>Prisma ORM</span>
+          </motion.div>
+
+          {/* Dashed connector */}
+          <svg style={{ position: "absolute" as const, inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 5 }}>
+            <motion.path d="M 270 150 C 370 150 370 300 510 300" stroke="rgba(204,120,92,0.18)" strokeWidth="1.5" strokeDasharray="6 4" fill="none"
+              animate={{ strokeDashoffset: [0, -20] }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }} />
+          </svg>
+
+          {/* Chat bubble */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.85, y: 8 }}
+            animate={{ opacity: [0, 1, 1, 0], scale: [0.85, 1, 1, 0.85], y: [8, 0, 0, 8] }}
+            transition={{ duration: 3.5, repeat: Infinity, repeatDelay: 6, delay: 3 }}
+            style={{ position: "absolute" as const, top: "14%", right: "26%", background: "rgba(37,35,32,0.96)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "6px 10px", zIndex: 15 }}>
+            <span style={{ color: "rgba(255,255,255,0.75)", fontSize: 10, fontFamily: "var(--font-sans)" }}>💡 what if we add auth here?</span>
+          </motion.div>
+        </div>
       </div>
     </motion.div>
-  );
-};
+  </section>
+);
 
-const DashboardPreview = () => {
-  return (
-    <div className="relative w-full max-w-4xl mx-auto mt-16 aspect-[16/9] rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden group">
-      {/* Browser Header */}
-      <div className="absolute top-0 inset-x-0 h-10 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center px-4 gap-2 z-10">
-        <div className="flex gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-red-400" />
-          <div className="w-3 h-3 rounded-full bg-amber-400" />
-          <div className="w-3 h-3 rounded-full bg-emerald-400" />
-        </div>
-        <div className="mx-auto w-1/3 h-5 bg-white dark:bg-slate-700 rounded text-[10px] flex items-center justify-center text-slate-400 font-mono">
-          drawsync.app/canvas/room-123
-        </div>
+const features = [
+  { icon: Zap, title: "Live Sync", description: "Dedicated WebSocket servers deliver sub-second updates to every connected client with zero perceptible lag.", accent: "var(--coral)" },
+  { icon: Shapes, title: "Monorepo Architecture", description: "Turborepo cleanly separates HTTP, WebSocket, and Frontend apps from shared packages and configs.", accent: "var(--accent-teal)" },
+  { icon: Database, title: "Persistent Storage", description: "Every room, shape, and message is reliably stored via Prisma ORM and PostgreSQL.", accent: "var(--accent-amber)" },
+];
+
+const Features = () => (
+  <section id="features" style={{ background: "var(--surface-soft)", paddingTop: 96, paddingBottom: 96 }} className="px-6">
+    <div className="max-w-6xl mx-auto">
+      <div className="text-center mb-16">
+        <span style={{ fontSize: 11, fontWeight: 600, fontFamily: "var(--font-sans)", letterSpacing: "2px", color: "var(--coral)", textTransform: "uppercase" as const }}>
+          Why DrawSync
+        </span>
+        <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(30px, 4vw, 44px)", fontWeight: 400, letterSpacing: "-0.5px", color: "var(--ink)", marginTop: 14, lineHeight: 1.15 }}>
+          Everything your team needs
+        </h2>
       </div>
-
-      {/* Canvas Area */}
-      <div className="absolute inset-0 top-10 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-50"></div>
-      <div className="absolute inset-0 top-10 bg-white dark:bg-slate-950">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-        
-        {/* Mock Toolbar */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-2 p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm z-10">
-          <div className="w-8 h-8 rounded bg-blue-100 dark:bg-blue-900 text-blue-600 flex items-center justify-center"><Pencil className="w-4 h-4"/></div>
-          <div className="w-8 h-8 rounded hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center"><Shapes className="w-4 h-4 opacity-50"/></div>
-          <div className="w-8 h-8 rounded hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center"><Terminal className="w-4 h-4 opacity-50"/></div>
-        </div>
-
-        {/* Animations */}
-        <AnimatedCursor color="#EF4444" name="Alice" x={[100, 400, 300, 100]} y={[200, 100, 400, 200]} delay={0} />
-        <AnimatedCursor color="#3B82F6" name="Bob" x={[600, 300, 500, 600]} y={[300, 500, 200, 300]} delay={1.5} />
-        
-        {/* Drawing Elements */}
-        <div className="absolute top-1/4 left-1/4">
-             <motion.div 
-               initial={{ scale: 0, rotate: 0 }}
-               animate={{ scale: 1, rotate: 180 }}
-               transition={{ duration: 4, repeat: Infinity, repeatType: "mirror" }}
-               className="w-32 h-32 border-4 border-dashed border-slate-800 dark:border-slate-200 rounded-lg flex items-center justify-center"
-             >
-                <span className="text-xs font-mono font-bold">MONOREPO</span>
-             </motion.div>
-        </div>
-        
-        <div className="absolute bottom-1/3 right-1/4">
-             <motion.div 
-               initial={{ opacity: 0, scale: 0.5 }}
-               animate={{ opacity: 1, scale: 1 }}
-               transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
-               className="w-24 h-24 bg-blue-500/10 rounded-full border-2 border-blue-500 flex items-center justify-center text-[10px] text-blue-600 font-bold"
-             >
-               WEBSOCKETS
-             </motion.div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {features.map((f, i) => (
+          <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }}
+            style={{ background: "var(--canvas)", borderRadius: 14, padding: "36px 32px", border: "1px solid var(--hairline)", position: "relative" as const, overflow: "hidden" }}>
+            {/* Accent top bar */}
+            <div style={{ position: "absolute" as const, top: 0, left: 0, right: 0, height: 3, background: f.accent, borderRadius: "14px 14px 0 0" }} />
+            <div style={{ width: 48, height: 48, borderRadius: 10, background: "var(--surface-soft)", border: "1px solid var(--hairline)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
+              <f.icon size={22} color={f.accent} />
+            </div>
+            <h3 style={{ fontFamily: "var(--font-sans)", fontSize: 18, fontWeight: 600, color: "var(--ink)", marginBottom: 10, lineHeight: 1.3 }}>{f.title}</h3>
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: 15, color: "var(--muted-color)", lineHeight: 1.65 }}>{f.description}</p>
+          </motion.div>
+        ))}
       </div>
     </div>
-  );
-};
+  </section>
+);
+
+const steps = [
+  { step: "01", icon: Users, title: "Create a room", desc: "Sign up and spin up a drawing room in seconds. Share the link — your team joins instantly, no install needed." },
+  { step: "02", icon: Pencil, title: "Start drawing", desc: "Sketch shapes, annotate ideas, and brainstorm freely on an infinite canvas built for speed." },
+  { step: "03", icon: MoveUpRight, title: "Sync in real time", desc: "Every stroke broadcasts to all collaborators via WebSockets. See teammates' cursors move live." },
+];
+
+const HowItWorks = () => (
+  <section id="how-it-works" style={{ background: "var(--surface-dark)", paddingTop: 96, paddingBottom: 96 }} className="px-6">
+    <div className="max-w-6xl mx-auto">
+      <div className="text-center mb-16">
+        <span style={{ fontSize: 11, fontWeight: 600, fontFamily: "var(--font-sans)", letterSpacing: "2px", color: "var(--coral)", textTransform: "uppercase" as const }}>How it works</span>
+        <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(30px, 4vw, 44px)", fontWeight: 400, letterSpacing: "-0.5px", color: "var(--on-dark)", marginTop: 14, lineHeight: 1.15 }}>
+          From idea to canvas in seconds
+        </h2>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {steps.map((item, i) => (
+          <motion.div key={item.step} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }}
+            style={{ background: "var(--surface-dark-elevated)", borderRadius: 14, padding: "36px 32px", border: "1px solid rgba(255,255,255,0.06)", position: "relative" as const }}>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 28, color: "var(--coral)", fontWeight: 700, opacity: 0.25, position: "absolute" as const, top: 24, right: 28 }}>{item.step}</span>
+            <div style={{ width: 48, height: 48, borderRadius: 10, background: "var(--surface-dark-soft)", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+              <item.icon size={22} color="var(--coral)" />
+            </div>
+            <h3 style={{ fontFamily: "var(--font-sans)", fontSize: 18, fontWeight: 600, color: "var(--on-dark)", marginBottom: 10, lineHeight: 1.3 }}>{item.title}</h3>
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: 15, color: "var(--on-dark-soft)", lineHeight: 1.65 }}>{item.desc}</p>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
+const CTABand = () => (
+  <section style={{ background: "var(--coral)", padding: "80px 24px", position: "relative" as const, overflow: "hidden" }} className="text-center">
+    {/* Background texture circles */}
+    <div style={{ position: "absolute" as const, top: -60, left: -60, width: 220, height: 220, borderRadius: "50%", background: "rgba(255,255,255,0.06)", pointerEvents: "none" }} />
+    <div style={{ position: "absolute" as const, bottom: -80, right: -40, width: 280, height: 280, borderRadius: "50%", background: "rgba(255,255,255,0.05)", pointerEvents: "none" }} />
+    <div style={{ position: "absolute" as const, top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 500, height: 500, borderRadius: "50%", background: "rgba(255,255,255,0.03)", pointerEvents: "none" }} />
+
+    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} style={{ position: "relative" as const, zIndex: 1 }}>
+      <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 400, letterSpacing: "-0.3px", color: "#fff", marginBottom: 16, lineHeight: 1.15 }}>
+        Ready to draw together?
+      </h2>
+      <p style={{ fontFamily: "var(--font-sans)", fontSize: 17, color: "rgba(255,255,255,0.82)", marginBottom: 36, maxWidth: 380, marginLeft: "auto", marginRight: "auto", lineHeight: 1.6 }}>
+        Create your first room free. No credit card required.
+      </p>
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <Link href="/auth" style={{ background: "#fff", color: "var(--coral)", fontSize: 15, fontWeight: 600, fontFamily: "var(--font-sans)", padding: "14px 32px", borderRadius: 8, lineHeight: 1, display: "inline-block" }} className="hover:opacity-90 transition-opacity">
+          Get started free →
+        </Link>
+        <a href="https://github.com/Bhavysinghal/draw-app" style={{ color: "rgba(255,255,255,0.85)", fontSize: 14, fontWeight: 500, fontFamily: "var(--font-sans)", display: "flex", alignItems: "center", gap: 6, padding: "14px 20px" }} className="hover:text-white transition-colors">
+          <Github size={16} />
+          View on GitHub
+        </a>
+      </div>
+    </motion.div>
+  </section>
+);
+
+const Footer = () => (
+  <footer style={{ background: "var(--surface-dark)", borderTop: "1px solid rgba(255,255,255,0.06)", padding: "24px 24px" }}>
+    <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="flex items-center gap-2">
+        <Logo size={22} dark />
+        <span style={{ fontFamily: "var(--font-sans)", color: "var(--on-dark-soft)", fontSize: 13 }}>
+          © 2026 DrawSync — built by{" "}
+          <a href="https://github.com/Bhavysinghal" style={{ color: "var(--coral)" }} className="hover:opacity-80 transition-opacity">Bhavysinghal</a>
+        </span>
+      </div>
+      <div className="flex items-center gap-6">
+        <a href="#features" style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--on-dark-soft)" }} className="hover:text-[var(--on-dark)] transition-colors">Features</a>
+        <a href="#how-it-works" style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--on-dark-soft)" }} className="hover:text-[var(--on-dark)] transition-colors">How it works</a>
+        <a href="https://github.com/Bhavysinghal/draw-app" style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--on-dark-soft)", display: "flex", alignItems: "center", gap: 4 }} className="hover:text-[var(--on-dark)] transition-colors">
+          <Github size={13} /> GitHub
+        </a>
+      </div>
+    </div>
+  </footer>
+);
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 relative overflow-hidden text-slate-900 dark:text-slate-100 selection:bg-blue-100 selection:text-blue-900">
-      
-      <FloatingDock />
-      <BackgroundShapes />
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 pt-40 pb-20 flex flex-col items-center justify-center text-center relative z-10">
-        
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-4xl space-y-8"
-        >
-          {/* Logo */}
-          <div className="flex justify-center">
-            <DrawSyncLogo />
-          </div>
-
-          {/* New Tagline with Reduced Font Size */}
-          <div className="space-y-6">
-             {/* 🛠️ UPDATED: Changed text-5xl/7xl to text-4xl/6xl */}
-             <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-foreground leading-tight">
-              <span className="relative inline-block">
-                <span className="absolute inset-0 translate-y-2 bg-stone-300 dark:bg-stone-800/50 blur-lg rounded-full opacity-50"></span>
-                <span className="relative text-stone-800 dark:text-stone-200 decoration-wavy underline decoration-stone-500/50 underline-offset-8">
-                  Dirty your hands
-                </span>
-              </span>
-              <br className="md:hidden" />
-              <span className="mx-3 text-muted-foreground/50 text-3xl font-light hidden md:inline-block">—</span>
-               
-              <span className="relative inline-block px-2">
-                 <span className="absolute inset-0 bg-primary/20 -skew-x-12 rounded-sm transform"></span>
-                 <span className="relative text-primary italic font-serif">collaboratively</span>
-              </span>
-            </h1>
-            
-            <p className="text-xl md:text-2xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-              ...by explaining your <span className="line-through decoration-destructive/50 decoration-4 font-semibold text-foreground/80">ugly</span> brilliant ideas. 
-              <br/>
-              A real-time whiteboard for chaotic genius.
-            </p>
-          </div>
-
-          <div className="flex items-center justify-center gap-4 pt-4">
-            <Link href="/auth">
-              <Button size="lg" className="h-14 px-10 text-xl font-semibold rounded-full bg-black text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-slate-200 transition-all hover:scale-105 active:scale-95 shadow-xl">
-                Start Drawing
-                <span className="ml-2">→</span>
-              </Button>
-            </Link>
-          </div>
-        </motion.div>
-
-        <motion.div
-           initial={{ opacity: 0, scale: 0.95, y: 40 }}
-           animate={{ opacity: 1, scale: 1, y: 0 }}
-           transition={{ duration: 0.8, delay: 0.2 }}
-           className="w-full"
-        >
-          <DashboardPreview />
-        </motion.div>
-
-        {/* Features */}
-        <div id="features" className="mt-32 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full text-left">
-          <div className="p-8 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-            <div className="w-12 h-12 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center mb-4">
-              <MoveUpRight className="w-6 h-6 text-slate-900 dark:text-white" />
-            </div>
-            <h3 className="text-xl font-bold mb-2">Live Sync</h3>
-            <p className="text-slate-500 dark:text-slate-400">
-              Powered by dedicated WebSocket servers for sub-second, low-latency updates across all clients.
-            </p>
-          </div>
-
-          <div className="p-8 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-            <div className="w-12 h-12 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center mb-4">
-              <Shapes className="w-6 h-6 text-slate-900 dark:text-white" />
-            </div>
-            <h3 className="text-xl font-bold mb-2">Monorepo</h3>
-            <p className="text-slate-500 dark:text-slate-400">
-              Built with Turborepo, separating runtime apps (HTTP, WS, Frontend) from shared packages and configs.
-            </p>
-          </div>
-
-          <div className="p-8 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-            <div className="w-12 h-12 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center mb-4">
-              <Terminal className="w-6 h-6 text-slate-900 dark:text-white" />
-            </div>
-            <h3 className="text-xl font-bold mb-2">Persistence</h3>
-            <p className="text-slate-500 dark:text-slate-400">
-               Utilizing Prisma ORM and PostgreSQL for reliable storage of users, rooms, and chat history.
-            </p>
-          </div>
-        </div>
-
-      </main>
+    <div style={{ background: "var(--canvas)" }}>
+      <Navbar />
+      <Hero />
+      <Features />
+      <HowItWorks />
+      <CTABand />
+      <Footer />
     </div>
   );
 }
-// // }
-// "use client";
-
-// import React, { useRef, useState, useEffect } from "react";
-// import Link from "next/link";
-// import { useTheme } from "next-themes";
-// import { 
-//   motion, 
-//   useMotionValue, 
-//   useSpring, 
-//   useTransform, 
-//   MotionValue 
-// } from "framer-motion";
-// import { 
-//   Home as HomeIcon,
-//   Pencil, 
-//   Moon, 
-//   Sun, 
-//   Shapes,
-//   Hexagon,
-//   Triangle,
-//   MoveUpRight,
-//   Minus,
-//   X,
-//   Terminal,
-//   MousePointer2,
-//   Circle,
-//   Square
-// } from "lucide-react";
-// import { Button } from "@/components/ui/button";
-// import { cn } from "@/lib/utils";
-
-// /* -------------------------------------------------------------------------- */
-// /* 1. LOGO COMPONENT (Responsive)                                             */
-// /* -------------------------------------------------------------------------- */
-// const DrawSyncLogo = () => {
-//   return (
-//     <div className="flex items-center justify-center gap-1 text-5xl md:text-8xl font-bold tracking-tighter text-foreground">
-//       <span>Dr</span>
-//       <motion.div 
-//         className="relative flex items-center justify-center w-[0.8em] h-[0.8em]"
-//         whileHover={{ rotate: 180, scale: 1.1 }}
-//         transition={{ type: "spring", stiffness: 200 }}
-//       >
-//         <Triangle className="w-full h-full fill-blue-600 stroke-none" />
-//       </motion.div>
-//       <span>wS</span>
-//       <span>yn</span>
-//       <motion.div 
-//         className="relative flex items-center justify-center w-[0.7em] h-[0.7em]"
-//         animate={{ rotate: 360 }}
-//         transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-//       >
-//         <svg viewBox="0 0 100 100" className="w-full h-full fill-none stroke-blue-600 stroke-[15] stroke-linecap-round">
-//           <path d="M 90 30 A 40 40 0 1 0 90 70" />
-//         </svg>
-//       </motion.div>
-//     </div>
-//   );
-// };
-
-// /* -------------------------------------------------------------------------- */
-// /* 2. DOCK COMPONENTS (Mobile Bottom-Anchored)                                */
-// /* -------------------------------------------------------------------------- */
-// function DockItem({
-//   mouseX,
-//   icon: Icon,
-//   href,
-//   onClick,
-//   label,
-//   active = false,
-// }: {
-//   mouseX: MotionValue;
-//   icon?: React.ElementType;
-//   href?: string;
-//   onClick?: () => void;
-//   label?: string;
-//   active?: boolean;
-// }) {
-//   const ref = useRef<HTMLDivElement>(null);
-//   const distance = useTransform(mouseX, (val) => {
-//     const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
-//     return val - bounds.x - bounds.width / 2;
-//   });
-
-//   const isIcon = !!Icon;
-//   const baseWidth = isIcon ? 40 : 80;
-//   const maxWidth = isIcon ? 70 : 110;
-
-//   const width = useSpring(useTransform(distance, [-150, 0, 150], [baseWidth, maxWidth, baseWidth]), { mass: 0.1, stiffness: 150, damping: 12 });
-//   const height = useSpring(useTransform(distance, [-150, 0, 150], [40, 55, 40]), { mass: 0.1, stiffness: 150, damping: 12 });
-//   const contentScale = useSpring(useTransform(distance, [-150, 0, 150], [1, 1.2, 1]), { mass: 0.1, stiffness: 150, damping: 12 });
-
-//   const content = (
-//     <motion.div
-//       ref={ref}
-//       style={{ width, height }}
-//       className={cn(
-//         "flex items-center justify-center relative transition-colors duration-200 cursor-pointer border border-slate-200 dark:border-slate-800",
-//         isIcon ? "rounded-full aspect-square" : "rounded-full px-2",
-//         active 
-//           ? "bg-black text-white dark:bg-white dark:text-black" 
-//           : "bg-white hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400"
-//       )}
-//       onClick={onClick}
-//     >
-//       <motion.div style={{ scale: contentScale }} className="flex items-center justify-center whitespace-nowrap">
-//         {Icon ? <Icon className="w-5 h-5" /> : <span className="text-xs md:text-sm font-medium">{label}</span>}
-//       </motion.div>
-//     </motion.div>
-//   );
-
-//   return href ? <Link href={href}>{content}</Link> : <button onClick={onClick} className="focus:outline-none">{content}</button>;
-// }
-
-// const FloatingDock = () => {
-//   const { setTheme, theme } = useTheme();
-//   const [mounted, setMounted] = useState(false);
-//   const mouseX = useMotionValue(Infinity);
-//   useEffect(() => { setMounted(true); }, []);
-
-//   return (
-//     <motion.div
-//       onMouseMove={(e) => mouseX.set(e.pageX)}
-//       onMouseLeave={() => mouseX.set(Infinity)}
-//       initial={{ y: 100, opacity: 0 }}
-//       animate={{ y: 0, opacity: 1 }}
-//       className="fixed bottom-6 md:top-10 md:bottom-auto left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-3 py-2 rounded-full bg-white/80 dark:bg-black/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-2xl"
-//     >
-//       <DockItem mouseX={mouseX} icon={HomeIcon} href="/" label="Home" />
-//       <DockItem 
-//         mouseX={mouseX} 
-//         icon={!mounted ? Moon : (theme === "dark" ? Sun : Moon)}
-//         onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-//       />
-//       <div className="w-px h-6 bg-slate-200 dark:bg-slate-800 mx-1" />
-//       <div className="hidden sm:flex gap-2">
-//          <DockItem mouseX={mouseX} href="#features" label="Features" />
-//       </div>
-//       <DockItem mouseX={mouseX} href="/auth" label="Sign In" />
-//       <DockItem mouseX={mouseX} href="/auth" label="Sign Up" active />
-//     </motion.div>
-//   );
-// };
-
-// /* -------------------------------------------------------------------------- */
-// /* 3. VISUAL ELEMENTS (Background & Preview)                                  */
-// /* -------------------------------------------------------------------------- */
-// const BackgroundShapes = () => (
-//   <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20 md:opacity-40">
-//     <motion.div className="absolute top-[15%] right-[10%]" animate={{ rotate: -10, y: [0, 10, 0] }} transition={{ duration: 5, repeat: Infinity }}><Triangle className="w-12 md:w-16 h-12 md:h-16 stroke-slate-400 fill-none" /></motion.div>
-//     <motion.div className="absolute bottom-[20%] left-[10%]" animate={{ rotate: 15, y: [0, -10, 0] }} transition={{ duration: 6, repeat: Infinity }}><Square className="w-16 md:w-20 h-16 md:h-20 stroke-slate-400 fill-none" /></motion.div>
-//     <div className="absolute top-[10%] right-[40%] grid grid-cols-4 gap-2 opacity-30">
-//         {[...Array(16)].map((_, i) => <div key={i} className="w-1 h-1 bg-slate-500 rounded-full" />)}
-//     </div>
-//   </div>
-// );
-
-// const AnimatedCursor = ({ color, x, y, name, delay }: { color: string, x: number[], y: number[], name: string, delay: number }) => (
-//   <motion.div
-//     initial={{ x: x[0], y: y[0], opacity: 0 }}
-//     animate={{ x, y, opacity: [0, 1, 1, 0] }}
-//     transition={{ duration: 8, repeat: Infinity, repeatDelay: 2, delay, times: [0, 0.1, 0.9, 1] }}
-//     className="absolute top-0 left-0 pointer-events-none z-20"
-//   >
-//     <MousePointer2 className="w-4 h-4 md:w-5 md:h-5 fill-current" style={{ color }} />
-//     <div className="ml-4 mt-1 px-1.5 py-0.5 rounded text-[10px] text-white font-medium shadow-sm" style={{ backgroundColor: color }}>{name}</div>
-//   </motion.div>
-// );
-
-// const DashboardPreview = () => (
-//   <div className="relative w-full max-w-4xl mx-auto mt-8 md:mt-16 aspect-[16/9] rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden">
-//     <div className="absolute top-0 inset-x-0 h-8 md:h-10 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center px-4 gap-2 z-10">
-//       <div className="flex gap-1"><div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-red-400" /><div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-amber-400" /><div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-emerald-400" /></div>
-//     </div>
-//     <div className="absolute inset-0 top-8 md:top-10 bg-white dark:bg-slate-950">
-//       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:20px_20px]"></div>
-//       <AnimatedCursor color="#EF4444" name="Alice" x={[50, 200, 150, 50]} y={[100, 50, 200, 100]} delay={0} />
-//       <AnimatedCursor color="#3B82F6" name="Bob" x={[300, 150, 250, 300]} y={[150, 250, 100, 150]} delay={1.5} />
-//     </div>
-//   </div>
-// );
-
-// /* -------------------------------------------------------------------------- */
-// /* 4. MAIN PAGE                                                               */
-// /* -------------------------------------------------------------------------- */
-// export default function Home() {
-//   return (
-//     <div className="min-h-screen bg-white dark:bg-slate-950 relative overflow-hidden text-slate-900 dark:text-slate-100">
-//       <FloatingDock />
-//       <BackgroundShapes />
-
-//       <main className="container mx-auto px-4 pt-20 md:pt-40 pb-32 flex flex-col items-center text-center relative z-10">
-//         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl space-y-6 md:space-y-10">
-//           <div className="scale-75 md:scale-100"><DrawSyncLogo /></div>
-
-//           <div className="space-y-4">
-//             <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight leading-tight">
-//               Dirty your hands <br className="block md:hidden"/>
-//               <span className="text-primary italic font-serif">collaboratively</span>
-//             </h1>
-//             <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
-//               Real-time whiteboarding for explaining your brilliant ideas. Built for chaotic genius.
-//             </p>
-//           </div>
-
-//           <div className="flex flex-col sm:flex-row justify-center gap-4 px-8">
-//             <Link href="/auth" className="w-full sm:w-auto">
-//               <Button size="lg" className="w-full h-14 px-10 text-lg md:text-xl font-semibold rounded-full shadow-xl">
-//                 Start Drawing Free →
-//               </Button>
-//             </Link>
-//           </div>
-//         </motion.div>
-
-//         <div className="w-full scale-[0.9] md:scale-100 origin-top">
-//           <DashboardPreview />
-//         </div>
-
-//         <div id="features" className="mt-20 md:mt-32 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl w-full text-left">
-//           <FeatureCard icon={MoveUpRight} title="Live Sync" desc="Sub-second updates via WebSockets." />
-//           <FeatureCard icon={Shapes} title="Monorepo" desc="Built with Turborepo for scale." />
-//           <FeatureCard icon={Terminal} title="Persistence" desc="Powered by Prisma and PostgreSQL." />
-//         </div>
-//       </main>
-//     </div>
-//   );
-// }
-
-// const FeatureCard = ({ icon: Icon, title, desc }: { icon: any, title: string, desc: string }) => (
-//   <div className="p-6 md:p-8 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 transition-all hover:shadow-lg">
-//     <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center mb-4 border border-slate-100 dark:border-slate-700">
-//       <Icon className="w-5 md:w-6 h-5 md:h-6 text-primary" />
-//     </div>
-//     <h3 className="text-lg md:text-xl font-bold mb-2">{title}</h3>
-//     <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base">{desc}</p>
-//   </div>
-// );
