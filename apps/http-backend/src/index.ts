@@ -32,6 +32,33 @@ const mailer = nodemailer.createTransport({
   },
 });
 
+// --- 3-random-words slug generator ---
+const ADJECTIVES = [
+  "swift", "bright", "calm", "dark", "early", "fierce", "gentle", "happy",
+  "icy", "jolly", "keen", "lively", "misty", "noble", "odd", "proud",
+  "quiet", "rapid", "silent", "tall", "urban", "vivid", "warm", "wild",
+  "young", "zesty", "amber", "bold", "crisp", "deep", "empty", "flat",
+  "grand", "heavy", "inner", "jade", "kind", "light", "muted", "neat",
+  "open", "plain", "quick", "rough", "sharp", "thin", "ultra", "vast",
+  "wavy", "exact",
+];
+
+const NOUNS = [
+  "river", "cloud", "stone", "flame", "frost", "blade", "cedar", "delta",
+  "eagle", "field", "grove", "haven", "inlet", "jewel", "knoll", "lunar",
+  "maple", "north", "ocean", "piano", "quest", "ridge", "sigma", "titan",
+  "umbra", "vapor", "whale", "xenon", "yacht", "zephyr", "atlas", "brush",
+  "coral", "dunes", "epoch", "forge", "globe", "heron", "ivory", "jungle",
+  "karma", "latch", "mango", "nexus", "orbit", "pixel", "quark", "raven",
+  "spark", "trail",
+];
+
+function generateSlug(): string {
+  const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+  return `${pick(ADJECTIVES)}-${pick(NOUNS)}-${pick(NOUNS)}`;
+}
+// -------------------------------------
+
 app.get("/auth/google", (req, res) => {
   const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${process.env.GOOGLE_REDIRECT_URI}&response_type=code&scope=profile email`;
   res.redirect(url);
@@ -147,21 +174,22 @@ app.post("/signin", asyncHandler(async (req, res) => {
 }));
 
 app.post("/create-room", middleware, asyncHandler(async (req, res) => {
-  const { name } = req.body;
-  if (!name) {
-    res.status(400).json({ message: "Room name is required" });
-    return;
+  // Generate a unique 3-word slug, retry if collision
+  let slug = generateSlug();
+  let attempts = 0;
+  while (attempts < 5) {
+    const existing = await prismaClient.room.findUnique({ where: { slug } });
+    if (!existing) break;
+    slug = generateSlug();
+    attempts++;
   }
-
-  const randomString = Math.random().toString(36).substring(2, 6);
-  const slug = name.toLowerCase().trim().replace(/ /g, "-") + "-" + randomString;
 
   const room = await prismaClient.room.create({
     data: { slug, adminId: req.userId! },
     select: { id: true, slug: true, createdAt: true },
   });
 
-  res.json({ roomId: room.id });
+  res.json({ roomId: room.id, slug: room.slug });
 }));
 
 app.get("/room/:slug", asyncHandler(async (req, res) => {
@@ -189,7 +217,14 @@ app.get("/my-rooms", middleware, asyncHandler(async (req, res) => {
         { collaborators: { some: { id: req.userId } } },
       ],
     },
-    select: { id: true, slug: true, createdAt: true },
+    select: {
+      id: true,
+      slug: true,
+      createdAt: true,
+      collaborators: {
+        select: { id: true, name: true, photo: true },
+      },
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -270,10 +305,10 @@ app.get("/chats/:slug", middleware, asyncHandler(async (req, res) => {
   const page = Number(req.query.page) || 1;
   const limit = 50;
 
- const room = await prismaClient.room.findFirst({
+  const room = await prismaClient.room.findFirst({
     where: isNumeric ? { id: Number(param) } : { slug: param as string },
     include: { shapes: true },
-});
+  });
 
   if (!room) {
     res.status(404).json({ messages: [] });
@@ -297,14 +332,14 @@ app.get("/rooms/:slug/shapes", middleware, asyncHandler(async (req, res) => {
   const roomWithShapes = await prismaClient.room.findFirst({
     where: isNumeric ? { id: Number(param) } : { slug: param as string },
     include: { shapes: true },
-});
+  });
 
-if (!roomWithShapes) {
+  if (!roomWithShapes) {
     res.status(404).json({ shapes: [] });
     return;
-}
+  }
 
-const shapes = roomWithShapes.shapes.map((s: any) => JSON.parse(s.data));
+  const shapes = roomWithShapes.shapes.map((s: any) => JSON.parse(s.data));
   res.json({ shapes });
 }));
 

@@ -107,3 +107,7 @@
     font-family: var(--font-sans);
   }
 }
+input::placeholder {
+  color: var(--muted-soft);
+  opacity: 0.5;
+}

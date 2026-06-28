@@ -4,10 +4,7 @@ import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
 import {
   IconArrowLeft,
   IconBrandTabler,
-  IconSettings,
   IconUserBolt,
-  IconMoon,
-  IconSun,
 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
@@ -23,14 +20,9 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ onLogout, user }: AppSidebarProps) {
-  const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
-  // Prevent hydration mismatch by waiting for mount
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  
 
   const links = [
     {
@@ -47,27 +39,8 @@ export function AppSidebar({ onLogout, user }: AppSidebarProps) {
         <IconUserBolt className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />
       ),
     },
-    {
-      label: "Settings",
-      href: "#",
-      icon: (
-        <IconSettings className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />
-      ),
-    },
-    {
-      label: theme === "dark" ? "Light Mode" : "Dark Mode",
-      href: "#",
-      onClick: () => setTheme(theme === "dark" ? "light" : "dark"),
-      icon: mounted ? (
-        theme === "dark" ? (
-          <IconSun className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />
-        ) : (
-          <IconMoon className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />
-        )
-      ) : (
-        <div className="h-5 w-5 shrink-0" /> // Placeholder during hydration
-      ),
-    },
+    
+    
     {
       label: "Logout",
       href: "#",
