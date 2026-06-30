@@ -34,6 +34,8 @@ export default function CanvasPage() {
   const userColor = useRef<string>(getRandomColor());
   const username = useRef<string>('');
   const sendElementsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingElementsRef = useRef<readonly any[] | null>(null);
+  const roomIdRef = useRef<number | null>(null);
 
   const [remoteCursors, setRemoteCursors] = useState<Record<string, CursorPosition>>({});
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -45,6 +47,12 @@ export default function CanvasPage() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [roomVisibility, setRoomVisibility] = useState<'PUBLIC' | 'PRIVATE'>('PRIVATE');
   const [roomAdminId, setRoomAdminId] = useState<string | null>(null);
+
+  // Keep a ref copy of roomId so the beforeunload listener (registered once)
+  // always sees the latest value without needing to re-subscribe.
+  useEffect(() => {
+    roomIdRef.current = roomId;
+  }, [roomId]);
 
   // 0. Resolve Slug to Numeric ID
   useEffect(() => {
@@ -179,6 +187,10 @@ export default function CanvasPage() {
   const handleChange = (elements: readonly any[]) => {
     if (!roomId || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
 
+    // Keep a copy of the latest elements so beforeunload can flush them
+    // immediately if the debounce timer hasn't fired yet.
+    pendingElementsRef.current = elements;
+
     if (sendElementsTimer.current) clearTimeout(sendElementsTimer.current);
     sendElementsTimer.current = setTimeout(() => {
       wsRef.current?.send(JSON.stringify({
@@ -187,6 +199,7 @@ export default function CanvasPage() {
         elements,
         clientId: clientId.current,
       }));
+      pendingElementsRef.current = null;
     }, 100);
   };
 
@@ -201,6 +214,36 @@ export default function CanvasPage() {
       username: username.current,
     }));
   };
+
+  // 4b. Flush any pending debounced drawing update immediately.
+  // Called on beforeunload so the last edit within the 100ms debounce
+  // window isn't silently dropped when the tab closes.
+  const flushPendingDrawing = () => {
+    if (!pendingElementsRef.current) return;
+    if (!roomIdRef.current || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+
+    if (sendElementsTimer.current) {
+      clearTimeout(sendElementsTimer.current);
+      sendElementsTimer.current = null;
+    }
+
+    wsRef.current.send(JSON.stringify({
+      type: 'drawing',
+      roomId: roomIdRef.current,
+      elements: pendingElementsRef.current,
+      clientId: clientId.current,
+    }));
+    pendingElementsRef.current = null;
+  };
+
+  // Register the beforeunload flush once on mount.
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      flushPendingDrawing();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   // 5. Save button — replace stored shapes with the current visible canvas
   const handleSaveToServer = async () => {
