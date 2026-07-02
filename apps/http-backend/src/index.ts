@@ -28,6 +28,12 @@ app.use(
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://draw-app-frontend-nine.vercel.app/";
 
+// Lightweight health check — used by the frontend to detect if the
+// Render free-tier instance is asleep before submitting real requests.
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 const mailer = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -270,6 +276,64 @@ app.get("/my-rooms", middleware, asyncHandler(async (req, res) => {
   });
 
   res.json({ rooms });
+}));
+
+app.delete("/room/:roomId", middleware, asyncHandler(async (req, res) => {
+  const roomId = parseInt(req.params.roomId as string);
+
+  if (Number.isNaN(roomId)) {
+    res.status(400).json({ message: "Invalid room ID" });
+    return;
+  }
+
+  const room = await prismaClient.room.findUnique({ where: { id: roomId } });
+
+  if (!room) {
+    res.status(404).json({ message: "Room not found" });
+    return;
+  }
+
+  if (room.adminId !== req.userId) {
+    res.status(403).json({ message: "Only the room creator can delete this room" });
+    return;
+  }
+
+  // No cascade configured on the schema, so clear dependent rows first.
+  await prismaClient.$transaction([
+    prismaClient.chat.deleteMany({ where: { roomId } }),
+    prismaClient.shape.deleteMany({ where: { roomId } }),
+    prismaClient.room.delete({ where: { id: roomId } }),
+  ]);
+
+  res.json({ message: "Room deleted" });
+}));
+
+app.post("/room/:roomId/leave", middleware, asyncHandler(async (req, res) => {
+  const roomId = parseInt(req.params.roomId as string);
+
+  if (Number.isNaN(roomId)) {
+    res.status(400).json({ message: "Invalid room ID" });
+    return;
+  }
+
+  const room = await prismaClient.room.findUnique({ where: { id: roomId } });
+
+  if (!room) {
+    res.status(404).json({ message: "Room not found" });
+    return;
+  }
+
+  if (room.adminId === req.userId) {
+    res.status(400).json({ message: "Room owners cannot leave — delete the room instead" });
+    return;
+  }
+
+  await prismaClient.room.update({
+    where: { id: roomId },
+    data: { collaborators: { disconnect: { id: req.userId! } } },
+  });
+
+  res.json({ message: "Left room" });
 }));
 
 app.post("/rooms/:roomId/add-collaborator", middleware, asyncHandler(async (req, res) => {

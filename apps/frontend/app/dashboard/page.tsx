@@ -3,8 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Input } from '@/components/ui/input';
+import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -29,6 +28,9 @@ import {
   UserPlus,
   Globe,
   Lock,
+  Trash2,
+  AlertTriangle,
+  DoorOpen,
 } from "lucide-react";
 import { BACKEND_URL } from '../../config';
 import Link from 'next/link';
@@ -68,6 +70,32 @@ const Avatar = ({ name, size = 32, idx = 0 }: { name: string; size?: number; idx
     {name ? name.charAt(0).toUpperCase() : '?'}
   </div>
 );
+
+// Image with automatic fallback to initials avatar if the photo URL
+// fails to load (expired Google photo links, network hiccups, etc).
+const SafeImage = ({
+  src, name, size = 32, idx = 0, style,
+}: { src?: string; name: string; size?: number; idx?: number; style?: React.CSSProperties }) => {
+  const [failed, setFailed] = useState(false);
+
+  if (!src || failed) {
+    return <Avatar name={name} size={size} idx={idx} />;
+  }
+
+  return (
+    <img
+      src={src}
+      alt={name}
+      onError={() => setFailed(true)}
+      style={{
+        width: size, height: size, borderRadius: '50%',
+        objectFit: 'cover', flexShrink: 0,
+        border: '2px solid var(--canvas)',
+        ...style,
+      }}
+    />
+  );
+};
 
 const CopyButton = ({ text }: { text: string }) => {
   const [copied, setCopied] = useState(false);
@@ -119,7 +147,7 @@ const DotGrid = () => {
     const animate = (ts: number) => {
       if (!start) start = ts;
       const t = (ts - start) / 1000;
-setOpacity(0.8 + Math.sin(t * 0.6) * 0.15);
+      setOpacity(0.8 + Math.sin(t * 0.6) * 0.15);
       frame = requestAnimationFrame(animate);
     };
     frame = requestAnimationFrame(animate);
@@ -165,6 +193,12 @@ function DashboardContent() {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [collabEmail, setCollabEmail] = useState('');
   const [inviting, setInviting] = useState(false);
+
+  const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const [roomToLeave, setRoomToLeave] = useState<Room | null>(null);
+  const [leaving, setLeaving] = useState(false);
 
   const toastOptions = { position: 'top-right' as const, autoClose: 2000 };
 
@@ -268,6 +302,40 @@ function DashboardContent() {
     router.push(`/canvas/${slug}`);
   };
 
+  const handleDeleteRoom = async () => {
+    if (!roomToDelete || !token) return;
+    setDeleting(true);
+    try {
+      await axios.delete(`${BACKEND_URL}/room/${roomToDelete.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success('Room deleted', toastOptions);
+      setRoomToDelete(null);
+      fetchRooms(token);
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Failed to delete room', toastOptions);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleLeaveRoom = async () => {
+    if (!roomToLeave || !token) return;
+    setLeaving(true);
+    try {
+      await axios.post(`${BACKEND_URL}/room/${roomToLeave.id}/leave`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success('Left room', toastOptions);
+      setRoomToLeave(null);
+      fetchRooms(token);
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Failed to leave room', toastOptions);
+    } finally {
+      setLeaving(false);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     router.push('/auth');
@@ -304,10 +372,7 @@ function DashboardContent() {
                 borderRadius: 999, padding: '6px 14px 6px 6px', cursor: 'pointer',
                 transition: 'border-color 0.15s',
               }}>
-                {userData?.photo
-                  ? <img src={userData.photo} alt={userData.name} style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover' }} />
-                  : <Avatar name={userData?.name || '?'} size={30} idx={0} />
-                }
+                <SafeImage src={userData?.photo} name={userData?.name || '?'} size={30} idx={0} />
                 <span style={{ color: 'var(--ink)', fontSize: 14, fontWeight: 500 }}>{userData?.name?.split(' ')[0] || 'You'}</span>
               </button>
             </DropdownMenuTrigger>
@@ -454,50 +519,52 @@ function DashboardContent() {
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {filteredRooms.map((room) => (
-              <motion.div
-                key={room.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                style={{
-                  background: 'var(--surface-card)',
-                  border: '1px solid var(--hairline)',
-                  borderRadius: 12, padding: 24,
-                  display: 'flex', flexDirection: 'column', gap: 16,
-                  cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s',
-                }}
-                onMouseEnter={e => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--coral)';
-                  (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(204,120,92,0.12)';
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--hairline)';
-                  (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                      <span style={{
-                        fontFamily: 'var(--font-sans)', fontSize: 14, fontWeight: 600,
-                        color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      }}>
-                        {room.slug}
-                      </span>
-                      <span
-                        title={room.visibility === 'PUBLIC' ? 'Public room' : 'Private room'}
-                        style={{ display: 'inline-flex', color: 'var(--muted-color)', flexShrink: 0 }}
-                      >
-                        {room.visibility === 'PUBLIC' ? <Globe size={13} /> : <Lock size={13} />}
-                      </span>
-                      <CopyButton text={room.slug} />
-                    </div>
-                    <span style={{ color: 'var(--muted-color)', fontSize: 12 }}>
-                      {new Date(room.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </span>
-                  </div>
+            {filteredRooms.map((room) => {
+              const isOwner = room.adminId === userData?.id;
 
-                  {room.visibility === 'PRIVATE' && room.adminId === userData?.id && (
+              return (
+                <motion.div
+                  key={room.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  style={{
+                    background: 'var(--surface-card)',
+                    border: '1px solid var(--hairline)',
+                    borderRadius: 12, padding: 24,
+                    display: 'flex', flexDirection: 'column', gap: 16,
+                    cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s',
+                  }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'var(--coral)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(204,120,92,0.12)';
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'var(--hairline)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        <span style={{
+                          fontFamily: 'var(--font-sans)', fontSize: 14, fontWeight: 600,
+                          color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        }}>
+                          {room.slug}
+                        </span>
+                        <span
+                          title={room.visibility === 'PUBLIC' ? 'Public room' : 'Private room'}
+                          style={{ display: 'inline-flex', color: 'var(--muted-color)', flexShrink: 0 }}
+                        >
+                          {room.visibility === 'PUBLIC' ? <Globe size={13} /> : <Lock size={13} />}
+                        </span>
+                        <CopyButton text={room.slug} />
+                      </div>
+                      <span style={{ color: 'var(--muted-color)', fontSize: 12 }}>
+                        {new Date(room.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                    </div>
+
                     <DropdownMenu modal={false}>
                       <DropdownMenuTrigger asChild>
                         <button style={{
@@ -512,71 +579,91 @@ function DashboardContent() {
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => { setSelectedRoom(room); setShowAddUserDialog(true); }}>
-                          <UserPlus className="mr-2 h-4 w-4" /> Invite
-                        </DropdownMenuItem>
+                        {isOwner ? (
+                          <>
+                            {room.visibility === 'PRIVATE' && (
+                              <DropdownMenuItem onClick={() => { setSelectedRoom(room); setShowAddUserDialog(true); }}>
+                                <UserPlus className="mr-2 h-4 w-4" /> Invite
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => setRoomToDelete(room)}
+                              style={{ color: 'var(--error)' }}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" /> Delete Room
+                            </DropdownMenuItem>
+                          </>
+                        ) : (
+                          <DropdownMenuItem
+                            onClick={() => setRoomToLeave(room)}
+                            style={{ color: 'var(--error)' }}
+                          >
+                            <DoorOpen className="mr-2 h-4 w-4" /> Leave Room
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  )}
-                </div>
+                  </div>
 
-                <div style={{ height: 1, background: 'var(--hairline)' }} />
+                  <div style={{ height: 1, background: 'var(--hairline)' }} />
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, minHeight: 32 }}>
-                  {room.collaborators && room.collaborators.length > 0 ? (
-                    <>
-                      <Users size={13} style={{ color: 'var(--muted-color)', marginRight: 4 }} />
-                      <div style={{ display: 'flex' }}>
-                        {room.collaborators.slice(0, 4).map((c, idx) => (
-                          <div key={c.id} style={{ marginLeft: idx === 0 ? 0 : -8, zIndex: idx }}>
-                            {c.photo
-                              ? <img src={c.photo} alt={c.name} title={c.name} style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid var(--surface-card)', objectFit: 'cover' }} />
-                              : <Avatar name={c.name || '?'} size={28} idx={idx} />
-                            }
-                          </div>
-                        ))}
-                      </div>
-                      {room.collaborators.length > 4 && (
-                        <span style={{ color: 'var(--muted-color)', fontSize: 12, marginLeft: 4 }}>+{room.collaborators.length - 4}</span>
-                      )}
-                    </>
-                  ) : (
-                    <span style={{ color: 'var(--muted-color)', fontSize: 12 }}>No collaborators yet</span>
-                  )}
-                </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, minHeight: 32 }}>
+                    {room.collaborators && room.collaborators.length > 0 ? (
+                      <>
+                        <Users size={13} style={{ color: 'var(--muted-color)', marginRight: 4 }} />
+                        <div style={{ display: 'flex' }}>
+                          {room.collaborators.slice(0, 4).map((c, idx) => (
+                            <div key={c.id} style={{ marginLeft: idx === 0 ? 0 : -8, zIndex: idx }}>
+                              <SafeImage
+                                src={c.photo} name={c.name || '?'} size={28} idx={idx}
+                                style={{ border: '2px solid var(--surface-card)' }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        {room.collaborators.length > 4 && (
+                          <span style={{ color: 'var(--muted-color)', fontSize: 12, marginLeft: 4 }}>+{room.collaborators.length - 4}</span>
+                        )}
+                      </>
+                    ) : (
+                      <span style={{ color: 'var(--muted-color)', fontSize: 12 }}>No collaborators yet</span>
+                    )}
+                  </div>
 
-                <button
-                  onClick={() => handleEnterRoom(room.slug)}
-                  disabled={joiningSlug === room.slug}
-                  style={{
-                    width: '100%', height: 38, borderRadius: 8,
-                    background: joiningSlug === room.slug ? 'var(--surface-cream-strong)' : 'var(--canvas)',
-                    border: '1px solid var(--hairline)',
-                    color: 'var(--ink)', fontSize: 13, fontWeight: 500,
-                    fontFamily: 'var(--font-sans)', cursor: joiningSlug === room.slug ? 'not-allowed' : 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                    transition: 'background 0.15s, border-color 0.15s',
-                  }}
-                  onMouseEnter={e => {
-                    if (joiningSlug !== room.slug) {
-                      (e.currentTarget as HTMLElement).style.background = 'var(--coral)';
-                      (e.currentTarget as HTMLElement).style.borderColor = 'var(--coral)';
-                      (e.currentTarget as HTMLElement).style.color = '#fff';
+                  <button
+                    onClick={() => handleEnterRoom(room.slug)}
+                    disabled={joiningSlug === room.slug}
+                    style={{
+                      width: '100%', height: 38, borderRadius: 8,
+                      background: joiningSlug === room.slug ? 'var(--surface-cream-strong)' : 'var(--canvas)',
+                      border: '1px solid var(--hairline)',
+                      color: 'var(--ink)', fontSize: 13, fontWeight: 500,
+                      fontFamily: 'var(--font-sans)', cursor: joiningSlug === room.slug ? 'not-allowed' : 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                      transition: 'background 0.15s, border-color 0.15s',
+                    }}
+                    onMouseEnter={e => {
+                      if (joiningSlug !== room.slug) {
+                        (e.currentTarget as HTMLElement).style.background = 'var(--coral)';
+                        (e.currentTarget as HTMLElement).style.borderColor = 'var(--coral)';
+                        (e.currentTarget as HTMLElement).style.color = '#fff';
+                      }
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLElement).style.background = 'var(--canvas)';
+                      (e.currentTarget as HTMLElement).style.borderColor = 'var(--hairline)';
+                      (e.currentTarget as HTMLElement).style.color = 'var(--ink)';
+                    }}
+                  >
+                    {joiningSlug === room.slug
+                      ? <><Loader2 size={13} className="animate-spin" /> Opening…</>
+                      : <><ArrowRight size={13} /> Enter Room</>
                     }
-                  }}
-                  onMouseLeave={e => {
-                    (e.currentTarget as HTMLElement).style.background = 'var(--canvas)';
-                    (e.currentTarget as HTMLElement).style.borderColor = 'var(--hairline)';
-                    (e.currentTarget as HTMLElement).style.color = 'var(--ink)';
-                  }}
-                >
-                  {joiningSlug === room.slug
-                    ? <><Loader2 size={13} className="animate-spin" /> Opening…</>
-                    : <><ArrowRight size={13} /> Enter Room</>
-                  }
-                </button>
-              </motion.div>
-            ))}
+                  </button>
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </main>
@@ -697,6 +784,100 @@ function DashboardContent() {
           >
             {inviting ? <><Loader2 size={14} className="animate-spin" /> Sending…</> : 'Send Invitation'}
           </button>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── DELETE ROOM CONFIRMATION DIALOG ── */}
+      <Dialog open={!!roomToDelete} onOpenChange={(open) => !open && setRoomToDelete(null)}>
+        <DialogContent style={{ background: 'var(--canvas)', border: '1px solid var(--hairline)', borderRadius: 12 }}>
+          <DialogHeader>
+            <DialogTitle style={{
+              fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 400, color: 'var(--ink)',
+              display: 'flex', alignItems: 'center', gap: 10,
+            }}>
+              <AlertTriangle size={20} style={{ color: 'var(--error)' }} />
+              Delete this room?
+            </DialogTitle>
+          </DialogHeader>
+          <p style={{ color: 'var(--muted-color)', fontSize: 14, lineHeight: 1.6 }}>
+            This will permanently delete <strong style={{ color: 'var(--ink)' }}>{roomToDelete?.slug}</strong> along
+            with all its drawings and chat history. This action cannot be undone.
+          </p>
+          <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+            <button
+              onClick={() => setRoomToDelete(null)}
+              disabled={deleting}
+              style={{
+                flex: 1, height: 42, borderRadius: 8,
+                background: 'transparent', border: '1px solid var(--hairline)',
+                color: 'var(--ink)', fontSize: 14, fontWeight: 500,
+                fontFamily: 'var(--font-sans)', cursor: deleting ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDeleteRoom}
+              disabled={deleting}
+              style={{
+                flex: 1, height: 42, borderRadius: 8,
+                background: 'var(--error)', border: 'none',
+                color: '#fff', fontSize: 14, fontWeight: 500,
+                fontFamily: 'var(--font-sans)', cursor: deleting ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                opacity: deleting ? 0.7 : 1,
+              }}
+            >
+              {deleting ? <><Loader2 size={14} className="animate-spin" /> Deleting…</> : <><Trash2 size={14} /> Delete</>}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── LEAVE ROOM CONFIRMATION DIALOG ── */}
+      <Dialog open={!!roomToLeave} onOpenChange={(open) => !open && setRoomToLeave(null)}>
+        <DialogContent style={{ background: 'var(--canvas)', border: '1px solid var(--hairline)', borderRadius: 12 }}>
+          <DialogHeader>
+            <DialogTitle style={{
+              fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 400, color: 'var(--ink)',
+              display: 'flex', alignItems: 'center', gap: 10,
+            }}>
+              <DoorOpen size={20} style={{ color: 'var(--error)' }} />
+              Leave this room?
+            </DialogTitle>
+          </DialogHeader>
+          <p style={{ color: 'var(--muted-color)', fontSize: 14, lineHeight: 1.6 }}>
+            <strong style={{ color: 'var(--ink)' }}>{roomToLeave?.slug}</strong> will be removed from
+            your dashboard. You&apos;ll need a new invite from the owner to rejoin.
+          </p>
+          <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+            <button
+              onClick={() => setRoomToLeave(null)}
+              disabled={leaving}
+              style={{
+                flex: 1, height: 42, borderRadius: 8,
+                background: 'transparent', border: '1px solid var(--hairline)',
+                color: 'var(--ink)', fontSize: 14, fontWeight: 500,
+                fontFamily: 'var(--font-sans)', cursor: leaving ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleLeaveRoom}
+              disabled={leaving}
+              style={{
+                flex: 1, height: 42, borderRadius: 8,
+                background: 'var(--error)', border: 'none',
+                color: '#fff', fontSize: 14, fontWeight: 500,
+                fontFamily: 'var(--font-sans)', cursor: leaving ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                opacity: leaving ? 0.7 : 1,
+              }}
+            >
+              {leaving ? <><Loader2 size={14} className="animate-spin" /> Leaving…</> : <><DoorOpen size={14} /> Leave</>}
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

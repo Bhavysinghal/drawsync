@@ -9,6 +9,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { BACKEND_URL } from '../../config';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { WakingUp } from '@/components/WakingUp';
 
 // ── Logo ──────────────────────────────────────────────────────────────────────
 const Logo = ({ size = 26 }: { size?: number }) => (
@@ -30,12 +31,43 @@ const FEATURES = [
   { icon: Zap, text: 'Rooms ready in seconds, no setup' },
 ];
 
+// Ping /health once with a short timeout. Returns true if backend answered.
+async function pingHealth(timeoutMs = 2500): Promise<boolean> {
+  try {
+    await axios.get(`${BACKEND_URL}/health`, { timeout: timeoutMs });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Ensure backend is awake before proceeding. Shows the WakingUp overlay
+// (via setWaking) if the first ping fails, then polls every 3s up to ~90s.
+async function ensureBackendAwake(setWaking: (v: boolean) => void): Promise<boolean> {
+  const awake = await pingHealth();
+  if (awake) return true;
+
+  setWaking(true);
+  const maxAttempts = 30; // ~90s at 3s intervals
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise(r => setTimeout(r, 3000));
+    const ok = await pingHealth();
+    if (ok) {
+      setWaking(false);
+      return true;
+    }
+  }
+  setWaking(false);
+  return false;
+}
+
 function AuthPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ username: '', email: '', password: '' });
   const [loading, setLoading] = useState(false);
+  const [waking, setWaking] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [formError, setFormError] = useState('');
 
@@ -57,6 +89,14 @@ function AuthPage() {
     setFormError('');
     if (activeTab === 'signup' && passwordError) return;
     setLoading(true);
+
+    const awake = await ensureBackendAwake(setWaking);
+    if (!awake) {
+      setLoading(false);
+      toast.error('Server is taking too long to respond. Please try again.');
+      return;
+    }
+
     try {
       const endpoint = activeTab === 'signup' ? `${BACKEND_URL}/signup` : `${BACKEND_URL}/signin`;
       const payload = activeTab === 'signup'
@@ -82,18 +122,25 @@ function AuthPage() {
     }
   };
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    const awake = await ensureBackendAwake(setWaking);
+    setLoading(false);
+    if (!awake) {
+      toast.error('Server is taking too long to respond. Please try again.');
+      return;
+    }
     window.location.href = `${BACKEND_URL}/auth/google`;
   };
 
   const inputStyle: React.CSSProperties = {
-  width: '100%', height: 42, padding: '0 14px',
-  background: 'var(--surface-soft)', border: '1px solid var(--hairline)',
-  borderRadius: 8, color: 'var(--ink)', fontSize: 14,
-  fontFamily: 'var(--font-sans)', outline: 'none', boxSizing: 'border-box',
-  WebkitBoxShadow: '0 0 0px 1000px var(--surface-soft) inset',
-  WebkitTextFillColor: 'var(--ink)',
-};
+    width: '100%', height: 42, padding: '0 14px',
+    background: 'var(--surface-soft)', border: '1px solid var(--hairline)',
+    borderRadius: 8, color: 'var(--ink)', fontSize: 14,
+    fontFamily: 'var(--font-sans)', outline: 'none', boxSizing: 'border-box',
+    WebkitBoxShadow: '0 0 0px 1000px var(--surface-soft) inset',
+    WebkitTextFillColor: 'var(--ink)',
+  };
 
   const labelStyle: React.CSSProperties = {
     fontSize: 13, fontWeight: 500, color: 'var(--ink)',
@@ -103,6 +150,7 @@ function AuthPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', fontFamily: 'var(--font-sans)' }}>
       <ToastContainer position="top-right" autoClose={3000} />
+      <WakingUp visible={waking} />
 
       {/* ── LEFT PANEL (dark navy) ── */}
       <div className="hidden md:flex" style={{
@@ -301,15 +349,16 @@ function AuthPage() {
           {/* Google */}
           <button
             type="button" onClick={handleGoogleLogin}
+            disabled={loading}
             style={{
               width: '100%', height: 42, borderRadius: 8,
               background: 'var(--canvas)', border: '1px solid var(--hairline)',
               color: 'var(--ink)', fontSize: 14, fontWeight: 500,
-              fontFamily: 'var(--font-sans)', cursor: 'pointer',
+              fontFamily: 'var(--font-sans)', cursor: loading ? 'not-allowed' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-              transition: 'background 0.15s',
+              transition: 'background 0.15s', opacity: loading ? 0.6 : 1,
             }}
-            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface-soft)'}
+            onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLElement).style.background = 'var(--surface-soft)'; }}
             onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--canvas)'}
           >
             <FcGoogle size={18} /> Continue with Google
