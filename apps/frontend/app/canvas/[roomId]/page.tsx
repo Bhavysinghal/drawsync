@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
 import '@excalidraw/excalidraw/index.css';
-import { RoomChat } from '@/components/RoomChat';
+// import { RoomChat } from '@/components/RoomChat'; // temporarily disabled
 import { useParams, useRouter } from 'next/navigation';
 import { BACKEND_URL, WSS_URL } from '../../../config';
 
@@ -330,18 +330,21 @@ export default function CanvasPage() {
         }}
       />
 
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2">
+      {/* Save / Share bar — top-right on mobile (avoids Excalidraw's
+          bottom-left hamburger menu), bottom-center on larger screens. */}
+      <div className="fixed z-50 flex flex-col items-center gap-2 bottom-16 left-1/2 -translate-x-1/2">
+
         {lastSaved && (
           <span className="text-xs text-gray-500 font-medium bg-white/80 px-2 py-0.5 rounded-full shadow-sm">
             Last saved: {lastSaved.toLocaleTimeString()}
           </span>
         )}
 
-        <div className="flex items-center gap-3 bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg border border-slate-200">
+        <div className="flex items-center gap-2 sm:gap-3 bg-white/90 backdrop-blur-md px-3 sm:px-4 py-2 rounded-xl shadow-lg border border-slate-200">
           <button
             onClick={handleSaveToServer}
             disabled={saveStatus === 'saving'}
-            className={`text-sm font-semibold rounded-lg px-4 py-1.5 shadow transition-all duration-200 flex items-center gap-2
+            className={`text-sm font-semibold rounded-lg px-3 sm:px-4 py-1.5 shadow transition-all duration-200 flex items-center gap-2
               ${saveStatus === 'saved' ? 'bg-green-100 text-green-700' : 'bg-slate-900 text-white'}
               ${saveStatus === 'saving' ? 'opacity-60 cursor-not-allowed' : 'hover:opacity-90'}
             `}
@@ -351,7 +354,7 @@ export default function CanvasPage() {
 
           <button
             onClick={handleShare}
-            className="text-sm font-semibold text-slate-700 border border-slate-300 rounded-lg px-4 py-1.5 bg-white hover:bg-slate-50 transition-all shadow-sm"
+            className="text-sm font-semibold text-slate-700 border border-slate-300 rounded-lg px-3 sm:px-4 py-1.5 bg-white hover:bg-slate-50 transition-all shadow-sm"
           >
             Share
           </button>
@@ -361,7 +364,7 @@ export default function CanvasPage() {
       {showShare && (
         <div className="fixed inset-0 bg-black/20 z-[60]" onClick={() => setShowShare(false)}>
           <div
-            className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-white border border-slate-200 rounded-xl shadow-2xl p-6 w-[350px]"
+            className="absolute bottom-28 left-1/2 -translate-x-1/2 bg-white border border-slate-200 rounded-xl shadow-2xl p-6 w-[calc(100vw-24px)] max-w-[350px]"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-4">
@@ -434,7 +437,8 @@ export default function CanvasPage() {
         ))}
       </div>
 
-      {roomId && <RoomChat roomId={roomId} ws={wsRef.current} currentUserId={currentUserId} />}
+      {/* Live chat temporarily disabled */}
+      {/* {roomId && <RoomChat roomId={roomId} ws={wsRef.current} currentUserId={currentUserId} />} */}
     </div>
   );
 }

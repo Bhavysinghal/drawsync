@@ -5,25 +5,40 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const MESSAGES = [
-  'Waking up the server…',
-  'This can take up to a minute on the free tier…',
-  'Almost there…',
-  'Just a little longer…',
+  'Sharpening the pencils…',
+  'Unrolling the canvas…',
+  'Arranging the sticky notes…',
+  'Waking up your workspace…',
+  'Almost ready to draw…',
 ];
 
 export function WakingUp({ visible }: { visible: boolean }) {
   const [messageIndex, setMessageIndex] = useState(0);
+  const [phase, setPhase] = useState<'intro' | 'compact'>('intro');
 
   useEffect(() => {
     if (!visible) {
       setMessageIndex(0);
+      setPhase('intro');
       return;
     }
-    const interval = setInterval(() => {
+
+    // Show the big centered animation first, then shrink down
+    // into the compact layout with rotating status text — makes
+    // the wait feel shorter and more intentional.
+    const introTimer = setTimeout(() => setPhase('compact'), 2600);
+
+    const messageInterval = setInterval(() => {
       setMessageIndex(i => Math.min(i + 1, MESSAGES.length - 1));
-    }, 8000);
-    return () => clearInterval(interval);
+    }, 7000);
+
+    return () => {
+      clearTimeout(introTimer);
+      clearInterval(messageInterval);
+    };
   }, [visible]);
+
+  const logoSize = phase === 'intro' ? { w: 200, h: 150 } : { w: 110, h: 82 };
 
   return (
     <AnimatePresence>
@@ -41,8 +56,14 @@ export function WakingUp({ visible }: { visible: boolean }) {
             gap: 28,
           }}
         >
-          {/* Animated logo — two circles orbiting in and out of overlap */}
-          <svg width="120" height="90" viewBox="0 0 120 90" fill="none">
+          {/* Animated logo — two circles orbiting in and out of overlap.
+              Starts big and centered, then shrinks into the compact layout. */}
+          <motion.svg
+            viewBox="0 0 120 90"
+            fill="none"
+            animate={{ width: logoSize.w, height: logoSize.h }}
+            transition={{ duration: 0.6, ease: 'easeInOut' }}
+          >
             <motion.circle
               cy="45" r="30"
               stroke="var(--coral)" strokeWidth="2.5"
@@ -67,47 +88,58 @@ export function WakingUp({ visible }: { visible: boolean }) {
               }}
               transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
             />
-          </svg>
+          </motion.svg>
 
-          {/* Status text */}
-          <div style={{ textAlign: 'center', maxWidth: 320 }}>
-            <p style={{
-              fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 400,
-              color: 'var(--ink)', marginBottom: 8,
-            }}>
-              DrawSync
-            </p>
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={messageIndex}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.3 }}
-                style={{ color: 'var(--muted-color)', fontSize: 14 }}
-              >
-                {MESSAGES[messageIndex]}
-              </motion.p>
-            </AnimatePresence>
-          </div>
-
-          {/* Progress dots */}
-          <div style={{ display: 'flex', gap: 6 }}>
-            {[0, 1, 2].map(i => (
+          {/* Status text — only appears once the logo has settled into
+              the compact size, so the intro feels clean and uncluttered. */}
+          <AnimatePresence>
+            {phase === 'compact' && (
               <motion.div
-                key={i}
-                style={{
-                  width: 6, height: 6, borderRadius: '50%',
-                  background: 'var(--coral)',
-                }}
-                animate={{ opacity: [0.25, 1, 0.25] }}
-                transition={{
-                  duration: 1.2, repeat: Infinity,
-                  delay: i * 0.2, ease: 'easeInOut',
-                }}
-              />
-            ))}
-          </div>
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                style={{ textAlign: 'center', maxWidth: 320 }}
+              >
+                <p style={{
+                  fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 400,
+                  color: 'var(--ink)', marginBottom: 8,
+                }}>
+                  DrawSync
+                </p>
+                <AnimatePresence mode="wait">
+                  <motion.p
+                    key={messageIndex}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.3 }}
+                    style={{ color: 'var(--muted-color)', fontSize: 14 }}
+                  >
+                    {MESSAGES[messageIndex]}
+                  </motion.p>
+                </AnimatePresence>
+
+                {/* Progress dots */}
+                <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 18 }}>
+                  {[0, 1, 2].map(i => (
+                    <motion.div
+                      key={i}
+                      style={{
+                        width: 6, height: 6, borderRadius: '50%',
+                        background: 'var(--coral)',
+                      }}
+                      animate={{ opacity: [0.25, 1, 0.25] }}
+                      transition={{
+                        duration: 1.2, repeat: Infinity,
+                        delay: i * 0.2, ease: 'easeInOut',
+                      }}
+                    />
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
     </AnimatePresence>

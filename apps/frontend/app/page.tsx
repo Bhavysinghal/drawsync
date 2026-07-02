@@ -134,7 +134,7 @@ const Hero = () => (
           </div>
 
           {/* Avatars */}
-          <div style={{ position: "absolute" as const, top: 20, right: 20, display: "flex", zIndex: 10 }}>
+          <div className="hidden sm:flex" style={{ position: "absolute" as const, top: 20, right: 20, zIndex: 10 }}>
             {[{ color: "#ef4444", label: "A" }, { color: "#3b82f6", label: "B" }, { color: "#10b981", label: "C" }].map((u, i) => (
               <div key={u.label} style={{ width: 30, height: 30, borderRadius: "50%", background: u.color, border: "2px solid #0f0e0c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", fontFamily: "var(--font-sans)", marginLeft: i === 0 ? 0 : -8 }}>
                 {u.label}
@@ -144,22 +144,22 @@ const Hero = () => (
           </div>
 
           {/* Cursor Alice */}
-          <motion.div animate={{ x: [60, 220, 150, 60], y: [80, 50, 200, 80] }} transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
-            style={{ position: "absolute" as const, top: 0, left: 0, zIndex: 20 }}>
+          <motion.div animate={{ left: ["8%", "42%", "28%", "8%"], top: ["48%", "32%", "70%", "48%"] }} transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+            style={{ position: "absolute" as const, zIndex: 20 }}>
             <MousePointer2 size={16} fill="#ef4444" color="#ef4444" />
             <div style={{ background: "#ef4444", color: "#fff", fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 4, marginLeft: 14, marginTop: 2, whiteSpace: "nowrap" as const, fontFamily: "var(--font-sans)" }}>Alice</div>
           </motion.div>
 
           {/* Cursor Bob */}
-          <motion.div animate={{ x: [500, 340, 440, 500], y: [220, 300, 140, 220] }} transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            style={{ position: "absolute" as const, top: 0, left: 0, zIndex: 20 }}>
+          <motion.div animate={{ left: ["82%", "62%", "72%", "82%"], top: ["58%", "76%", "42%", "58%"] }} transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            style={{ position: "absolute" as const, zIndex: 20 }}>
             <MousePointer2 size={16} fill="#3b82f6" color="#3b82f6" />
             <div style={{ background: "#3b82f6", color: "#fff", fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 4, marginLeft: 14, marginTop: 2, whiteSpace: "nowrap" as const, fontFamily: "var(--font-sans)" }}>Bob</div>
           </motion.div>
 
           {/* idea.tsx box */}
           <motion.div animate={{ rotate: [0, 1.5, -1.5, 0] }} transition={{ duration: 8, repeat: Infinity }}
-            style={{ position: "absolute" as const, top: "20%", left: "10%", width: 180, height: 110, border: "1.5px dashed var(--coral)", borderRadius: 10, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 6 }}>
+            style={{ position: "absolute" as const, top: "38%", left: "8%", width: "42%", maxWidth: 180, minWidth: 110, height: 90, border: "1.5px dashed var(--coral)", borderRadius: 10, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 6 }}>
             <Pencil size={14} color="var(--coral)" style={{ opacity: 0.7 }} />
             <span style={{ color: "var(--coral)", fontSize: 11, fontFamily: "var(--font-mono)", fontWeight: 600 }}>idea.tsx</span>
             <span style={{ color: "rgba(204,120,92,0.5)", fontSize: 9, fontFamily: "var(--font-mono)" }}>editing...</span>
@@ -167,7 +167,8 @@ const Hero = () => (
 
           {/* WebSocket circle */}
           <motion.div animate={{ scale: [1, 1.04, 1], opacity: [0.9, 1, 0.9] }} transition={{ duration: 4, repeat: Infinity }}
-            style={{ position: "absolute" as const, bottom: "16%", right: "16%", width: 130, height: 130, borderRadius: "50%", border: "1.5px solid var(--accent-teal)", background: "rgba(93,184,166,0.08)", display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 4 }}>
+            className="hidden sm:flex"
+            style={{ position: "absolute" as const, bottom: "16%", right: "16%", width: 130, height: 130, borderRadius: "50%", border: "1.5px solid var(--accent-teal)", background: "rgba(93,184,166,0.08)", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 4 }}>
             <Zap size={16} color="var(--accent-teal)" />
             <span style={{ color: "var(--accent-teal)", fontSize: 10, fontFamily: "var(--font-mono)", fontWeight: 600 }}>WebSocket</span>
             <span style={{ color: "rgba(93,184,166,0.5)", fontSize: 9, fontFamily: "var(--font-mono)" }}>ws://live</span>
@@ -175,13 +176,14 @@ const Hero = () => (
 
           {/* Prisma box */}
           <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 5, repeat: Infinity }}
-            style={{ position: "absolute" as const, bottom: "24%", left: "44%", width: 115, height: 68, background: "rgba(232,165,90,0.08)", border: "1.5px solid var(--accent-amber)", borderRadius: 8, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 4 }}>
+            className="hidden sm:flex"
+            style={{ position: "absolute" as const, bottom: "24%", left: "44%", width: 115, height: 68, background: "rgba(232,165,90,0.08)", border: "1.5px solid var(--accent-amber)", borderRadius: 8, flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 4 }}>
             <Database size={13} color="var(--accent-amber)" />
             <span style={{ color: "var(--accent-amber)", fontSize: 10, fontFamily: "var(--font-mono)", fontWeight: 600 }}>Prisma ORM</span>
           </motion.div>
 
           {/* Dashed connector */}
-          <svg style={{ position: "absolute" as const, inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 5 }}>
+          <svg className="hidden sm:block" style={{ position: "absolute" as const, inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 5 }}>
             <motion.path d="M 270 150 C 370 150 370 300 510 300" stroke="rgba(204,120,92,0.18)" strokeWidth="1.5" strokeDasharray="6 4" fill="none"
               animate={{ strokeDashoffset: [0, -20] }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }} />
           </svg>
@@ -191,6 +193,7 @@ const Hero = () => (
             initial={{ opacity: 0, scale: 0.85, y: 8 }}
             animate={{ opacity: [0, 1, 1, 0], scale: [0.85, 1, 1, 0.85], y: [8, 0, 0, 8] }}
             transition={{ duration: 3.5, repeat: Infinity, repeatDelay: 6, delay: 3 }}
+            className="hidden sm:block"
             style={{ position: "absolute" as const, top: "14%", right: "26%", background: "rgba(37,35,32,0.96)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "6px 10px", zIndex: 15 }}>
             <span style={{ color: "rgba(255,255,255,0.75)", fontSize: 10, fontFamily: "var(--font-sans)" }}>💡 what if we add auth here?</span>
           </motion.div>
