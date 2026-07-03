@@ -26,7 +26,7 @@ app.use(
   })
 );
 
-const FRONTEND_URL = process.env.FRONTEND_URL || "https://draw-app-frontend-nine.vercel.app/";
+const FRONTEND_URL = process.env.FRONTEND_URL || "https://drawsync-io.vercel.app";
 
 // Lightweight health check — used by the frontend to detect if the
 // Render free-tier instance is asleep before submitting real requests.

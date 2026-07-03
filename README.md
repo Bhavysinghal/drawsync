@@ -8,7 +8,7 @@ DrawSync is a real-time collaborative whiteboard web app where multiple users ca
 
 ## Live Demo
 
-> 🔗 **[https://draw-app-frontend-nine.vercel.app/](https://draw-app-frontend-nine.vercel.app/)**
+> 🔗 **[https://drawsync-io.vercel.app/](https://drawsync-io.vercel.app/)**
 
 ## Features
 
