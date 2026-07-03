@@ -3,7 +3,6 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
 import '@excalidraw/excalidraw/index.css';
-// import { RoomChat } from '@/components/RoomChat'; // temporarily disabled
 import { useParams, useRouter } from 'next/navigation';
 import { BACKEND_URL, WSS_URL } from '../../../config';
 
@@ -38,6 +37,12 @@ export default function CanvasPage() {
   const roomIdRef = useRef<number | null>(null);
 
   const [remoteCursors, setRemoteCursors] = useState<Record<string, CursorPosition>>({});
+  // Bumped on every scroll/zoom so remote cursor screen positions
+  // get recomputed against the viewer's own current viewport.
+  const [, forceCursorRecalc] = useState(0);
+  // Loaded dynamically client-side only, since the excalidraw package
+  // touches `window` at import time and breaks Next.js SSR otherwise.
+  const sceneCoordsToViewportCoordsRef = useRef<((args: { sceneX: number; sceneY: number }, appState: any) => { x: number; y: number }) | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [showShare, setShowShare] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -53,6 +58,14 @@ export default function CanvasPage() {
   useEffect(() => {
     roomIdRef.current = roomId;
   }, [roomId]);
+
+  // Dynamically load the coordinate-conversion helper client-side only.
+  useEffect(() => {
+    import('@excalidraw/excalidraw').then(mod => {
+      sceneCoordsToViewportCoordsRef.current = mod.sceneCoordsToViewportCoords;
+      forceCursorRecalc(n => n + 1);
+    });
+  }, []);
 
   // 0. Resolve Slug to Numeric ID
   useEffect(() => {
@@ -325,6 +338,7 @@ export default function CanvasPage() {
         theme="light"
         onChange={handleChange}
         onPointerUpdate={handlePointerUpdate}
+        onScrollChange={() => forceCursorRecalc(n => n + 1)}
         UIOptions={{
           canvasActions: { loadScene: true, export: { saveFileToDisk: true }, saveAsImage: true },
         }}
@@ -423,18 +437,32 @@ export default function CanvasPage() {
       )}
 
       <div className="absolute inset-0 pointer-events-none z-40">
-        {Object.values(remoteCursors).map((cursor) => (
-          <div key={cursor.clientId} className="absolute transition-all duration-100 ease-out" style={{ left: cursor.x, top: cursor.y }}>
-            <div className="relative">
-              <div className="absolute left-4 top-4 whitespace-nowrap px-2 py-1 rounded shadow-md text-[11px] font-bold text-white" style={{ backgroundColor: cursor.color }}>
-                {cursor.username}
+        {Object.values(remoteCursors).map((cursor) => {
+          const appState = excalidrawAPIRef.current?.getAppState();
+          const convert = sceneCoordsToViewportCoordsRef.current;
+          if (!appState || !convert) return null;
+
+          // Convert the sender's scene coordinates into THIS viewer's
+          // current screen coordinates, accounting for their own
+          // scroll position and zoom level.
+          const { x: screenX, y: screenY } = convert(
+            { sceneX: cursor.x, sceneY: cursor.y },
+            appState
+          );
+
+          return (
+            <div key={cursor.clientId} className="absolute transition-all duration-100 ease-out" style={{ left: screenX, top: screenY }}>
+              <div className="relative">
+                <div className="absolute left-4 top-4 whitespace-nowrap px-2 py-1 rounded shadow-md text-[11px] font-bold text-white" style={{ backgroundColor: cursor.color }}>
+                  {cursor.username}
+                </div>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M5.65376 12.3673H5.46026L5.31717 12.4976L0.500002 16.8829L0.500002 1.19841L11.7841 12.3673H5.65376Z" fill={cursor.color} stroke="white" strokeWidth="2"/>
+                </svg>
               </div>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M5.65376 12.3673H5.46026L5.31717 12.4976L0.500002 16.8829L0.500002 1.19841L11.7841 12.3673H5.65376Z" fill={cursor.color} stroke="white" strokeWidth="2"/>
-              </svg>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Live chat temporarily disabled */}
